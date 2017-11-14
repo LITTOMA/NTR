@@ -31,12 +31,16 @@ CFLAGS	:=	-Wall \
 			-fomit-frame-pointer -ffunction-sections -fdata-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DHAS_JPEG=1
+CFLAGS	+=	$(INCLUDE)
+
+ifneq ($(old3ds),TRUE)
+CFLAGS	+=	-DHAS_JPEG=1
+endif
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-nostartfiles -T$(TOPDIR)/3ds.ld -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-pie -nostartfiles -T$(TOPDIR)/3ds.ld -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -lm
 
