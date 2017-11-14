@@ -399,3 +399,8 @@ svc_kernelSetState:
 	
 	
 	
+.global svc_GetCurrentProcessorNumber	
+.type svc_GetCurrentProcessorNumber, %function
+svc_GetCurrentProcessorNumber:
+	svc 0x11
+	bx lr

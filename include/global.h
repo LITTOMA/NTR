@@ -27,3 +27,8 @@
 #include "sharedfunc.h"
 #include <ns/ns.h>
 #include <sys/socket.h>
+#include "dbg/platform.h"
+#include "dbg/dbg.h"
+#include "dbg/ipi.h"
+#include "dbg/mmuSync.h"
+#include "dbg/dexKernel.h"

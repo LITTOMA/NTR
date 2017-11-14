@@ -12,14 +12,46 @@ void rtInitLock(RT_LOCK *lock) {
 }
 
 void rtAcquireLock(RT_LOCK *lock) {
+	__asm__(
+		"mov r4, %[lock]\r\n"
+		"1:\r\n"
+		"ldrex r0, [r4]\r\n"
+		"cmp r0, #0\r\n"
+		"beq getLock\r\n"
+		"ldr r0, =0xF4240\r\n"
+		"bl svc_sleepThread\r\n"
+		"b 1b\r\n"
+		"getLock:\r\n"
+		"mov r1, #1\r\n"
+		"strex r0, r1, [r4]\r\n"
+		"cmp r0, #1\r\n"
+		"beq 1b\r\n"
+		:
+		:[lock]"r"(&lock->value)
+		:"r0","r1","r4"
+		);
+	/*
 	while(lock->value != 0) {
 		svc_sleepThread(1000000);
 	}
 	lock->value = 1;
+	*/
 }
 
 void rtReleaseLock(RT_LOCK *lock) {
-	lock->value = 0;
+	__asm__(
+		"mov r4, %[lock]\r\n"
+		"1:\r\n"
+		"ldrex r0, [r4]\r\n"
+		"mov r1, #0\r\n"
+		"strex r0, r1, [r4]\r\n"
+		"cmp r0, #1\r\n"
+		"beq 1b\r\n"
+		:
+		:[lock]"r"(&lock->value)
+		:"r0","r1","r4"
+		);
+	//lock->value = 0;
 }
 
 u32 rtAlignToPageSize(u32 size) {
@@ -201,6 +233,23 @@ final:
 	}
 
 	return size;
+}
+
+u32 rtGetKThreadContext(Handle hProcess, u32 tid, u32* ctx)
+{
+	u32 hThread;
+	u32 pKThread, pContext;
+	u32 ret;
+	
+	ret = svc_openThread(&hThread, hProcess, tid);
+	if (ret != 0) {
+		nsDbgPrint("openThread failed: %08x\n", ret, 0);
+		return ret;
+	}
+	pKThread = kGetKProcessByHandle(hThread);
+	kmemcpy(ctx, (void*) pKThread, 0xB0);
+	svc_closeHandle(hThread);
+	return 0;
 }
 
 u32 rtGetThreadReg(Handle hProcess, u32 tid, u32* ctx) {

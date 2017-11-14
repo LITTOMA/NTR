@@ -494,6 +494,11 @@ int main() {
 			disp(100, 0x1ff0000);
 			showDbg("homemenu ver: %08x", ntrConfig->HomeMenuVersion, 0);
 			injectToHomeMenu();
+			showMsg("boot dex server ver 1.0 beta");
+			dbgPlatformContext ctx;
+			dbgInitPlatformContext(&ctx);
+			u32 ret = dbgBootDEXKernel(&ctx);
+			showDbg("result: %08x", ret, 0);
 		}
 		
 		//dumpRemoteProcess(0xf, "/pidf");

@@ -34,3 +34,14 @@ mcr p15, 0, R0,c7,c10, 4 @Data Synchronization Barrier
 mcr p15, 0, R0,c7,c5, 4 @Flush Prefetch Buffer
 bx lr
 
+.global nsStubHookEntrypoint
+.type nsStubHookEntrypoint, %function
+nsStubHookEntrypoint:
+	stmfd sp!,{r0-r12,lr}
+	mrs r0, cpsr
+	stmfd sp!,{r0}
+	bl nsHookEntrypoint
+	ldmfd sp!,{r0}
+	msr cpsr, r0
+	ldmfd sp!,{r0-r12,lr}
+	ldr pc, =0x100000
