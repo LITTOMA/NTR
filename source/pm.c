@@ -361,6 +361,7 @@ u32 showStartAddrMenu() {
 	entries[0] = "0x00100000";
 	entries[1] = "0x08000000";
 	entries[2] = "0x14000000";
+	entries[3] = "0x30000000";
 	while (1){
 		r = showMenu("set addr", 3, entries);
 		if (r == 0) {
@@ -373,6 +374,10 @@ u32 showStartAddrMenu() {
 		}
 		if (r == 2) {
 			return 0x14000000;
+			break;
+		}
+		if (r == 3) {
+			return 0x30000000;
 			break;
 		}
 	}
@@ -412,7 +417,7 @@ void processManager() {
 		u8* actCaptions[] =  {"dump", "info"};
 		u32 act = showMenu(captions[r], 2, actCaptions);
 		if (act == 0) {
-			xsprintf(pidbuf, "/dump_pid%x_%d.dmp", pids[r], dumpCnt);
+			xsprintf(pidbuf, "/dump_pid%x_%08x.dmp", pids[r], startAddr);
 			dumpCnt += 1;
 			startAddr = showStartAddrMenu();
 			dumpRemoteProcess(pids[r], pidbuf, startAddr);

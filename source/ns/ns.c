@@ -977,7 +977,7 @@ void nsHandleSaveFile() {
 	svc_closeHandle(hFile);
 	nsDbgPrint("saved to %s successfully\n", buf);
 }
-
+#if 0
 int nsFindFreeBreakPoint() {
 	int i;
 	for (i = 1; i < MAX_BREAKPOINT; i++) {
@@ -1116,7 +1116,7 @@ void nsInitBreakPoint(int id, u32 addr, int type) {
 	bp->type = NS_BPTYPE_UNUSED;
 	nsDbgPrint("init breakpoint failed.\n");
 }
-
+#endif
 void nsHandleQueryHandle() {
 	NS_PACKET* pac = &(g_nsCtx->packetBuf);
 	u32 hProcess = 0;
@@ -1155,7 +1155,18 @@ void nsHandleBreakPoint() {
 	u32 method = pac->args[2];
 	u32 bpid = pac->args[0];
 	int id;
+	
+	if (method & 0x100)
+	{
+		dbgHandleDebuggerControl(pac);
+		return;
+	}
 
+	if (method != 4)
+	{
+		nsDbgPrint("the command is not available for NTR CFW DEX, please use NTR debugger dex\n");
+	}
+#if 0
 	if (method == 1) { // add
 		id = nsFindFreeBreakPoint();
 		nsDbgPrint("freeid: %d\n", id);
@@ -1164,12 +1175,13 @@ void nsHandleBreakPoint() {
 		}
 		nsInitBreakPoint(id, addr, type);
 	}
+#endif
 	if (method == 4) { // resume
 		nsDbgPrint("set resume flag");
 		g_nsCtx->breakPointStatus.resumeFlag = 1;
 		g_nsCtx->isBreakPointHandled = 0;
 	}
-
+#if 0
 	if (bpid >= MAX_BREAKPOINT) {
 		nsDbgPrint("invalid bpid\n");
 		return;
@@ -1182,7 +1194,7 @@ void nsHandleBreakPoint() {
 	if (method == 3) { // dis
 		nsDisableBreakPoint(bpid);
 	}
-
+#endif
 }
 
 
@@ -1496,15 +1508,23 @@ void nsHandleListThread() {
 	}
 	for (i = 0; i < tidCount; i++) {
 		u32 tid = tids[i];
-		nsDbgPrint("tid: 0x%08x\n", tid);
+		nsDbgPrint("thread id: 0x%08x\n", tid);
+		memset(ctx, 0x33, sizeof(ctx));
+		rtGetKThreadContext(hProcess, tid, ctx);
+		nsDbgPrint("Processor that created the thread is cpu%d\n", ctx[0x70 / 0x4]);
+		nsDbgPrint("Thread context page : %08x\n", ctx[0x8c / 0x4] - 0x1000);
 		memset(ctx, 0x33, sizeof(ctx));
 		rtGetThreadReg(hProcess, tid, ctx);
-		nsDbgPrint("pc: %08x, lr: %08x\n", ctx[15], ctx[14]);
-		for (j = 0; j < 32; j++) {
-
-			nsDbgPrint("%08x ", ctx[j]);
+		nsDbgPrint("register list of the thread\n");
+		//TODO:r0-r7 r12 lr r8-r11 sp lr pc cpsr
+		for (j = 0; j < 13; j++) {
+			if(j != 0 && (j & 3) == 0) nsDbgPrint("\n");
+			nsDbgPrint("r%d : %08x ",j , ctx[j]);
 		}
-		nsDbgPrint("\n");
+		nsDbgPrint("sp : %08x ", ctx[j++]);
+		nsDbgPrint("lr : %08x ", ctx[j++]);
+		nsDbgPrint("pc : %08x \n", ctx[j++]);
+		nsDbgPrint("cpsr : %08x \n", ctx[j++]);
 		svc_closeHandle(hThread);
 
 	}
@@ -1795,12 +1815,12 @@ void nsMainLoop() {
 		while (1) {
 			ret = rtRecvSocket(sockfd, (u8*)&(g_nsCtx->packetBuf), sizeof(NS_PACKET));
 			if (ret != sizeof(NS_PACKET)) {
-				nsDbgPrint("rtRecvSocket failed: %08x", ret, 0);
+				nsDbgPrint("rtRecvSocket failed: %08x\n", ret, 0);
 				break;
 			}
 			NS_PACKET* pac = &(g_nsCtx->packetBuf);
 			if (pac->magic != 0x12345678) {
-				nsDbgPrint("broken protocol: %08x, %08x", pac->magic, pac->seq);
+				nsDbgPrint("broken protocol: %08x, %08x\n", pac->magic, pac->seq);
 				break;
 			}
 			nsUpdateDebugStatus();
@@ -1813,6 +1833,24 @@ void nsMainLoop() {
 void nsThreadStart() {
 	nsMainLoop();
 	svc_exitThread();
+}
+
+void nsHookEntrypoint()
+{
+	u32 resumeFlag;
+	NS_BREAKPOINT_STATUS * bpStatus = &g_nsCtx->breakPointStatus;
+	rtDisableHook(&g_nsCtx->entrypointHook);
+	nsDbgPrint("succeed in attaching process, please use command \"continueprocess()\" to continue.\n");
+	//wait for resume flag
+	while(1) {
+		rtAcquireLock(&(g_nsCtx->breakPointStatusLock));
+		resumeFlag = bpStatus->resumeFlag;
+		rtReleaseLock(&(g_nsCtx->breakPointStatusLock));
+		svc_sleepThread(100000000);
+		if (resumeFlag) {
+			break;
+		}
+	}
 }
 
 #define STACK_SIZE 0x4000
@@ -1903,7 +1941,9 @@ void nsInit(u32 initType) {
 
 	if (g_nsConfig->initMode == NS_INITMODE_FROMHOOK) {
 		// hook entry point when attaching process
-		nsInitBreakPoint(1, 0x00100000, NS_BPTYPE_CODEONESHOT);
+		//nsInitBreakPoint(1, 0x00100000, NS_BPTYPE_CODEONESHOT);
+		rtInitHook(&g_nsCtx->entrypointHook , 0x100000 , (u32)nsStubHookEntrypoint);
+		rtEnableHook(&g_nsCtx->entrypointHook);
 	}
 	if ((g_nsConfig->initMode == NS_INITMODE_FROMHOOK) || (g_nsConfig->initMode == NS_INITMODE_FROMRELOAD)) {
 		nsMainLoop();

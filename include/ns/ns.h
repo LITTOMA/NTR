@@ -126,7 +126,7 @@ typedef struct _NS_CONTEXT {
 	RT_LOCK breakPointStatusLock;
 	NS_BREAKPOINT_STATUS breakPointStatus;
 	u32 isBreakPointHandled;
-
+	RT_HOOK entrypointHook;
 } NS_CONTEXT;
 
 extern NS_CONTEXT *g_nsCtx;
@@ -146,6 +146,7 @@ int rtSendSocket(u32 sockfd, u8 *buf, int size);
 u16 rtIntToPortNumber(u16 x) ;
 u32 rtGetFileSize(u8* fileName);
 u32 rtLoadFileToBuffer(u8* fileName, u32* pBuf, u32 bufSize) ;
+u32 rtGetKThreadContext(Handle hProcess, u32 tid, u32* ctx);
 u32 rtGetThreadReg(Handle hProcess, u32 tid, u32* ctx);
 u32 rtFlushInstructionCache(void* ptr, u32 size);
 void rtInitHook(RT_HOOK* hook, u32 funcAddr, u32 callbackAddr);
@@ -159,5 +160,5 @@ void rpSendBuffer(u8* buf, u32 size, u32 flag);
 u32 nsAttachProcess(Handle hProcess, u32 remotePC, NS_CONFIG *cfg, int sysRegion);
 u32 rtGenerateJumpCode(u32 dst, u32* buf);
 
-
+void nsStubHookEntrypoint();
 

@@ -30,8 +30,8 @@ SECTIONS
  . = ALIGN(4);	
   .bss : { 
 	*(.__bss_start)
+	*(.bss COMMON)
 	*(.bss.*)
-	*(.bss COMMON) 
 	*(.__bss_end)
  }
  __end__ = .;
