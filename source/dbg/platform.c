@@ -44,6 +44,14 @@ dbgKernelCacheInterfaceContext cacheInterfaceCtx_NEW112 = {
 	(void*)0xFFF202C8
 };
 
+dbgKernelCacheInterfaceContext cacheInterfaceCtx_NEW114 = {
+	//for new 3ds 11.4
+	(void*)0xFFF27480,
+	(void*)0xFFF1E1DC,
+	(void*)0xFFF1DE84,
+	(void*)0xFFF20518
+};
+
 dbgKernelCacheInterfaceContext cacheInterfaceCtx_Old96 = {
 	//for old 3ds 9.6
 	(void*)0xFFF24FF0,
@@ -125,6 +133,15 @@ dbgKernelMemoryControlContext memoryControlCtx_NEW95 = {
 
 dbgKernelMemoryControlContext memoryControlCtx_NEW112 = {
 	(void*)0xFFF1C750,
+	0xFFF32858,
+	(u32*)0xDFFF4E00,
+	0xFFFF0E00,
+	0xFFF32924,
+	0xFFF2E2D4
+};
+
+dbgKernelMemoryControlContext memoryControlCtx_NEW114 = {
+	(void*)0xFFF1C9A0,
 	0xFFF32858,
 	(u32*)0xDFFF4E00,
 	0xFFFF0E00,
@@ -257,6 +274,11 @@ void dbgInitPlatformContext(dbgPlatformContext * ctx)
 		{
 			ctx->cache = &cacheInterfaceCtx_NEW112;
 			ctx->memory = &memoryControlCtx_NEW112;
+		}
+		else if (ctx->firmVersion == SYSTEM_VERSION(11, 4, 0))
+		{
+			ctx->cache = &cacheInterfaceCtx_NEW114;
+			ctx->memory = &memoryControlCtx_NEW114;
 		}
 		ctx->dbgGetMainThreadTLS = (void*)dbgGetMainThreadTLS_New3ds;
 	}

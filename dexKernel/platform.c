@@ -82,6 +82,16 @@ dbgKernelCacheInterfaceContext cacheInterfaceCtx_NEW112 = {
 	(void*)0xFFF202C8
 };
 
+dbgKernelCacheInterfaceContext cacheInterfaceCtx_NEW114 =
+{
+	//for new 3ds 11.4
+	(void*)0xFFF27480,
+	(void*)0xFFF1E1DC,
+	(void*)0xFFF1DE84,
+	(void*)0xFFF20518
+};
+
+
 dbgKernelCacheInterfaceContext cacheInterfaceCtx_Old96 = {
 	//for old 3ds 9.6
 	(void*)0xFFF24FF0,
@@ -139,6 +149,13 @@ dbgKernelInterruptContext interruptCtx_NEW112 = {
 	0xFFF32924,
 	(u32*)0xFFF2E2D4,
 	(void*)0xFFF17F50
+};
+
+dbgKernelInterruptContext interruptCtx_NEW114 = {
+	//for new 3ds 11.4
+	0xFFF32924,
+	(u32*)0xFFF2E2D4,
+	(void*)0xFFF180F8
 };
 
 dbgKernelInterruptContext interruptCtx_Old96 = {
@@ -378,6 +395,12 @@ void dbgInitPlatformContext(dbgPlatformContext * ctx, u32 isNew3DS, u32 firmVers
 			ctx->cache = &cacheInterfaceCtx_NEW112;
 			ctx->exceptionHandler = &exceptionHandlerCtx_NEW112;
 			ctx->interrupt = &interruptCtx_NEW112;
+		}
+		else if (ctx->firmVersion == SYSTEM_VERSION(11, 4, 0))
+		{
+			ctx->cache = &cacheInterfaceCtx_NEW114;
+			ctx->exceptionHandler = &exceptionHandlerCtx_NEW112;
+			ctx->interrupt = &interruptCtx_NEW114;
 		}
 		ctx->regInterruptBaseAddr = 0xfffee000;//all of firm are same
 		ctx->dbgGetMainThreadTLS = (void*)dbgkGetMainThreadTLS_New3ds;
